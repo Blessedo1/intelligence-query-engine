@@ -11,7 +11,10 @@ app = FastAPI(title="Intelligence Query Engine - Insighta Labs")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*" "*" "*"],
+    allow_credentials=True,
+    allow_methods=["*" "*"],
 )
+
 
 @app.get("/api/profiles")
 def get_profiles(
