@@ -1,3 +1,4 @@
+import re
 from typing import Dict, Optional
 
 def parse_natural_query(q: str) -> Dict:
@@ -7,7 +8,9 @@ def parse_natural_query(q: str) -> Dict:
     text = q.lower().strip()
     filters = {}
 
-    # Gender
+    # Gender Logic
+    if "male" in text and "female" in text:
+        pass
     if "male" in text and "female" not in text:
         filters["gender"] = "male"
     elif "female" in text and "male" not in text:
@@ -27,16 +30,17 @@ def parse_natural_query(q: str) -> Dict:
     if "young" in text:
         filters["min_age"] = 16
         filters["max_age"] = 24
-    if any(word in text for word in ["older than", "above", "over"]):
-        for word in text.split():
-            if word.isdigit():
-                filters["min_age"] = int(word)
-                break
+
+    # Using regex to find digits near keywords for better accuracy
+    numbers = [int(s) for s in re.findall(r'\d+', text)]
+
+    if any(word in text for word in ["older than", "above", "over", "at least"]):
+        if numbers:
+            filters["min_age"] = numbers[0]
+            
     if any(word in text for word in ["below", "under", "younger than"]):
-        for word in text.split():
-            if word.isdigit():
-                filters["max_age"] = int(word)
-                break
+        if numbers:
+            filters["max_age"] = numbers[-1]
 
     # Country
     country_map = {
@@ -51,5 +55,7 @@ def parse_natural_query(q: str) -> Dict:
         if keyword in text:
             filters["country_id"] = code
             break
+    if not filters:
+        return {"status": "error", "message": "Unable to interpret query"}
 
     return filters
