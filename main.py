@@ -1,5 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, asc
 from typing import Optional
@@ -7,6 +9,13 @@ from database import get_db, Profile
 from query_parser import parse_natural_query
 
 app = FastAPI(title="Intelligence Query Engine - Insighta Labs")
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request, exc):
+    return JSONResponse(
+        status_code=400,
+        content={"status": "error", "message": "Invalid query parameters"}
+    )
 
 app.add_middleware(
     CORSMiddleware,
@@ -93,15 +102,15 @@ def search_profiles(
     query = db.query(Profile)
 
     if parsed.get("gender"):
-        query = query.filter(Profile.gender == parsed )
+        query = query.filter(Profile.gender == parsed["gender"])
     if parsed.get("age_group"):
-        query = query.filter(Profile.age_group == parsed )
+        query = query.filter(Profile.age_group == parsed["age_group"])
     if parsed.get("country_id"):
-        query = query.filter(Profile.country_id == parsed )
+        query = query.filter(Profile.country_id == parsedparsed["country_id"])
     if parsed.get("min_age"):
-        query = query.filter(Profile.age >= parsed )
+        query = query.filter(Profile.age >= parsed["min_age"])
     if parsed.get("max_age"):
-        query = query.filter(Profile.age <= parsed )
+        query = query.filter(Profile.age <= parsed["max_age"])
 
     total = query.count()
     offset = (page - 1) * limit
