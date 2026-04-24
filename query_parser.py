@@ -1,5 +1,5 @@
 import re
-from typing import Dict, Optional
+from typing import Dict
 
 def parse_natural_query(q: str) -> Dict:
     if not q or not isinstance(q, str):
@@ -43,16 +43,24 @@ def parse_natural_query(q: str) -> Dict:
             filters["max_age"] = numbers[-1]
 
     # Country
-    country_map = {
-        "nigeria": "NG", "nigerian": "NG", "naija": "NG",
-        "kenya": "KE", "kenyan": "KE",
-        "angola": "AO", "angolan": "AO",
-        "egypt": "EG", "ghana": "GH", "south africa": "ZA", "sa": "ZA",
-        "benin": "BJ", "togo": "TG"
-    }
-    
-    for keyword, code in country_map.items():
-        if keyword in text:
+    country_patterns = [
+        (r"\bsouth africa\b", "ZA"),
+        (r"\bsa\b", "ZA"),
+        (r"\bnigeria\b", "NG"),
+        (r"\bnigerian\b", "NG"),
+        (r"\bnaija\b", "NG"),
+        (r"\bkenya\b", "KE"),
+        (r"\bkenyan\b", "KE"),
+        (r"\bangola\b", "AO"),
+        (r"\bangolan\b", "AO"),
+        (r"\begypt\b", "EG"),
+        (r"\bghana\b", "GH"),
+        (r"\bbenin\b", "BJ"),
+        (r"\btogo\b", "TG"),
+    ]
+
+    for pattern, code in country_patterns:
+        if re.search(pattern, text):
             filters["country_id"] = code
             break
     if not filters:

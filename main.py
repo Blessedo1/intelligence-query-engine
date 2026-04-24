@@ -1,3 +1,4 @@
+import os
 from fastapi import FastAPI, Depends, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.exceptions import RequestValidationError
@@ -17,10 +18,12 @@ async def validation_exception_handler(request, exc):
         content={"status": "error", "message": "Invalid query parameters"}
     )
 
+ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("ALLOWED_ORIGINS", "*").split(",") if origin.strip()]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=ALLOWED_ORIGINS != ["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -42,6 +45,8 @@ def get_profiles(
     db: Session = Depends(get_db)
 ):
     query = db.query(Profile)
+    if min_age is not None and max_age is not None and min_age > max_age:
+        raise HTTPException(status_code=400, detail={"status": "error", "message": "min_age cannot be greater than max_age"})
 
     # === Advanced Filtering ===
     if gender:
@@ -97,7 +102,7 @@ def search_profiles(
     parsed = parse_natural_query(q)
     
     if isinstance(parsed, dict) and parsed.get("status") == "error":
-        raise HTTPException(status_code=400, detail=parsed)
+        raise HTTPException(status_code=400, detail="Invalid query parameters")
 
     query = db.query(Profile)
 
@@ -106,11 +111,13 @@ def search_profiles(
     if parsed.get("age_group"):
         query = query.filter(Profile.age_group == parsed["age_group"])
     if parsed.get("country_id"):
-        query = query.filter(Profile.country_id == parsedparsed["country_id"])
-    if parsed.get("min_age"):
+        query = query.filter(Profile.country_id == parsed["country_id"])
+    if parsed.get("min_age") is not None:
         query = query.filter(Profile.age >= parsed["min_age"])
-    if parsed.get("max_age"):
+    if parsed.get("max_age") is not None:
         query = query.filter(Profile.age <= parsed["max_age"])
+    if parsed.get("min_age") is not None and parsed.get("max_age") is not None and parsed["min_age"] > parsed["max_age"]:
+        raise HTTPException(status_code=400, detail={"status": "error", "message": "Invalid age range in query"})
 
     total = query.count()
     offset = (page - 1) * limit
