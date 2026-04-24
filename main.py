@@ -10,23 +10,24 @@ app = FastAPI(title="Intelligence Query Engine - Insighta Labs")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*" "*" "*"],
+    allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*" "*"],
+    allow_methods=["*"],
+    allow_headers=["*"],
 )
 
 
 @app.get("/api/profiles")
 def get_profiles(
-    gender: Optional = Query(None),
-    age_group: Optional = Query(None),
-    country_id: Optional = Query(None),
-    min_age: Optional = Query(None),
-    max_age: Optional = Query(None),
-    min_gender_probability: Optional = Query(None),
-    min_country_probability: Optional = Query(None),
-    sort_by: str = Query("created_at", enum= ),
-    order: str = Query("desc", enum= ),
+    gender: Optional[str] = Query(None),
+    age_group: Optional[str] = Query(None),
+    country_id: Optional[str] = Query(None),
+    min_age: Optional[int] = Query(None),
+    max_age: Optional[int] = Query(None),
+    min_gender_probability: Optional[float] = Query(None),
+    min_country_probability: Optional[float] = Query(None),
+    sort_by: str = Query("created_at", enum=["age", "gender_probability", "created_at"]),
+    order: str = Query("desc", enum=["asc", "desc"]),
     page: int = Query(1, ge=1),
     limit: int = Query(10, ge=1, le=50),
     db: Session = Depends(get_db)
